@@ -1,5 +1,7 @@
 package com.kode4you.wrongpricebestdeal.service;
 
+import com.kode4you.wrongpricebestdeal.domain.dto.Item;
+import com.kode4you.wrongpricebestdeal.domain.dto.ItemPrice;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
@@ -11,7 +13,9 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class WebDriverService {
@@ -36,17 +40,18 @@ public class WebDriverService {
         waitLoading.until(ExpectedConditions.elementToBeClickable(By.id("nav-search-submit-button")));
         driver.findElement(By.id("nav-search-submit-button")).click();
 
-
         List<WebElement> listOfElements = driver.findElements(By.cssSelector("div[data-component-type='s-search-result']"));
-        for(int i = 0; i<listOfElements.size(); i++){
-            listOfElements = driver.findElements(By.cssSelector("div[data-component-type='s-search-result']"));
-            WebElement itemNameElement = listOfElements.get(i).findElement(By.xpath("//span[@class='a-size-base-plus a-color-base a-text-normal']"));
-            System.out.println(itemNameElement.getText());
-        }
-        //listOfElements.stream().forEach(webElement -> {
-        //    listOfElements = driver.findElements(By.cssSelector("div[data-component-type='s-search-result']"));
-        //    WebElement itemNameElement = webElement.findElement(By.xpath("//span[@class='a-size-base-plus a-color-base a-text-normal']"));
-        //    System.out.println(itemNameElement.getText());
-        //});
+        List<Item> itemList = new ArrayList<>();
+        listOfElements.forEach(webElement -> {
+            Item item = new Item();
+            ItemPrice itemPrice = new ItemPrice();
+            item.setName(webElement.findElement(By.xpath(".//span[@class='a-size-base-plus a-color-base a-text-normal']")).getText());
+            boolean t = driver.findElements(By.xpath(".//span[@class='a-price-whole']")).size() != 0;
+            itemPrice.setPrice(t ? webElement.findElement(By.xpath(".//span[@class='a-price-whole']")).getText() : null);
+            WebElement elementImage = webElement.findElement(By.xpath(".//img[@class='s-image']"));
+            item.setImageLink(elementImage.getAttribute("src"));
+            item.setItemPrice(itemPrice);
+            itemList.add(item);
+        });
     }
 }
