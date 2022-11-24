@@ -1,0 +1,122 @@
+databaseChangeLog:
+  - changeSet:
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 0
+            sql: SELECT COUNT(*) from pg_catalog.pg_namespace where nspname = 'deal_schema'
+      id: create-schema deal_schema
+      author: Jimmy
+      changes:
+        - sql:
+            comment: Ajout des droits de la BDD
+            endDelimiter: ;
+            sql: GRANT ALL PRIVILEGES ON DATABASE wrong_price_best_deal TO james
+        - sql:
+            comment: Creation du schema
+            sql: CREATE SCHEMA deal_schema
+        - sql:
+            comment: Grant config du schema
+            sql: GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA deal_schema TO james
+  - changeSet:
+      id: create-table-item
+      author: Jimmy
+      preConditions:
+        - onFail: MARK_RAN
+          not:
+            tableExists:
+              tableName: item
+              schemaName: deal_schema
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: item_asin_pkey
+                  name: asin
+                  type: VARCHAR(250)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: name
+                  type: VARCHAR(250)
+              - column:
+                  constraints:
+                    nullable: false
+                  name: created_date
+                  type: TIMESTAMP WITH TIMEZONE
+              - column:
+                  constraints:
+                    nullable: false
+                  name: updated_date
+                  type: TIMESTAMP WITH TIMEZONE
+              - column:
+                  constraints:
+                    nullable: false
+                  name: image_link
+                  type: VARCHAR(250)
+            tableName: item
+            schemaName: deal_schema
+  - changeSet:
+      id: createIndex-itemName
+      author: Jimmy
+      changes:
+        - createIndex:
+            clustered: true
+            columns:
+              - column:
+                  name: name
+            indexName: item_itemName_idx
+            schemaName: deal_schema
+            tableName: item
+  - changeSet:
+      id: create-table-item-price
+      author: Jimmy
+      preConditions:
+        - onFail: MARK_RAN
+          not:
+            tableExists:
+              tableName: item_price
+              schemaName: deal_schema
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  autoIncrement: true
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: item_price_pkey
+                  name: id
+                  type: BIGINT
+              - column:
+                  constraints:
+                    nullable: true
+                  name: price
+                  type: FLOAT
+              - column:
+                  constraints:
+                    nullable: false
+                  name: item_asin
+                  type: VARCHAR(250)
+            tableName: item_price
+            schemaName: deal_schema
+  - changeSet:
+      id: create-foreign-key-item-item-price
+      author: Jimmy
+      changes:
+      - addForeignKeyConstraint:
+          baseColumnNames: item_asin
+          baseTableName: item_price
+          baseTableSchemaName: deal_schema
+          constraintName: fk_item_item-price
+          deferrable: true
+          initiallyDeferred: true
+          onDelete: CASCADE
+          onUpdate: RESTRICT
+          referencedColumnNames: asin
+          referencedTableName: item
+          referencedTableSchemaName: deal_schema
+          validate: true

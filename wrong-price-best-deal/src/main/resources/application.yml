@@ -1,0 +1,13 @@
+spring:
+  application:
+    name:WrongPriceBestDeal
+  datasource:
+    url: jdbc:postgresql://localhost:5432/wrong_price_best_deal
+    username: james
+    password: james
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        default_schema: deal_schema
+

@@ -1,7 +1,8 @@
 package com.kode4you.wrongpricebestdeal.service;
 
-import com.kode4you.wrongpricebestdeal.domain.dto.Item;
-import com.kode4you.wrongpricebestdeal.domain.dto.ItemPrice;
+import com.kode4you.wrongpricebestdeal.dao.ItemDao;
+import com.kode4you.wrongpricebestdeal.domain.dto.ItemDTO;
+import com.kode4you.wrongpricebestdeal.domain.dto.ItemPriceDTO;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
@@ -9,13 +10,17 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.text.NumberFormat;
+import java.text.ParseException;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.Locale;
 
 @Service
 public class WebDriverService {
@@ -23,6 +28,9 @@ public class WebDriverService {
     WebDriver driver;
 
     WebDriverWait waitLoading;
+
+    @Autowired
+    private ItemDao itemDao;
 
     public WebDriverService(){
         WebDriverManager.chromedriver().setup();
@@ -41,17 +49,36 @@ public class WebDriverService {
         driver.findElement(By.id("nav-search-submit-button")).click();
 
         List<WebElement> listOfElements = driver.findElements(By.cssSelector("div[data-component-type='s-search-result']"));
-        List<Item> itemList = new ArrayList<>();
+        List<ItemDTO> itemDTOList = new ArrayList<>();
         listOfElements.forEach(webElement -> {
-            Item item = new Item();
-            ItemPrice itemPrice = new ItemPrice();
-            item.setName(webElement.findElement(By.xpath(".//span[@class='a-size-base-plus a-color-base a-text-normal']")).getText());
-            boolean t = driver.findElements(By.xpath(".//span[@class='a-price-whole']")).size() != 0;
-            itemPrice.setPrice(t ? webElement.findElement(By.xpath(".//span[@class='a-price-whole']")).getText() : null);
+            ItemDTO itemDTO = itemDao.findItemByAsin(webElement.getAttribute("data-asin"));
+            itemDTO = itemDTO == null ? new ItemDTO() : itemDTO;
+            ItemPriceDTO itemPriceDTO = new ItemPriceDTO();
+            List<ItemPriceDTO> itemPriceDTOList = new ArrayList<>();
+            itemDTO.setName(webElement.findElement(By.xpath(".//span[@class='a-size-base-plus a-color-base a-text-normal']")).getText());
+            itemDTO.setAsin(webElement.getAttribute("data-asin"));
+            boolean t = webElement.findElements(By.xpath(".//span[@class='a-price-whole']")).size() != 0;
+            NumberFormat format = NumberFormat.getInstance(Locale.FRANCE);
+            Number number = null;
+            try {
+                if(t){
+                    number = format.parse(webElement.findElement(By.xpath(".//span[@class='a-price-whole']")).getText());
+                }
+            } catch (ParseException e) {
+                throw new RuntimeException(e);
+            }
+            itemPriceDTO.setPrice(number != null ? number.doubleValue() : null);
+            itemPriceDTOList.add(itemPriceDTO);
             WebElement elementImage = webElement.findElement(By.xpath(".//img[@class='s-image']"));
-            item.setImageLink(elementImage.getAttribute("src"));
-            item.setItemPrice(itemPrice);
-            itemList.add(item);
+            itemDTO.setImageLink(elementImage.getAttribute("src"));
+            itemDTO.setItemPriceList(itemPriceDTOList);
+            if(itemDTO.getCreatedDate() == null){
+                itemDTO.setCreatedDate(LocalDateTime.now());
+            }
+            itemDTO.setUpdatedDate(LocalDateTime.now());
+            itemDTOList.add(itemDTO);
         });
+
+        itemDao.saveItem(itemDTOList);
     }
 }

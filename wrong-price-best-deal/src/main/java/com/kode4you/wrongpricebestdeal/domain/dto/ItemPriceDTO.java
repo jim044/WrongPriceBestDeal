@@ -3,7 +3,8 @@ package com.kode4you.wrongpricebestdeal.domain.dto;
 import lombok.Data;
 
 @Data
-public class ItemPrice {
+public class ItemPriceDTO {
 
-    private String price;
+    private Double price;
+
 }
