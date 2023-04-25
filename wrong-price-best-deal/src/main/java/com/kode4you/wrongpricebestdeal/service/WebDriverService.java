@@ -8,6 +8,7 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,12 +34,14 @@ public class WebDriverService {
     private ItemDao itemDao;
 
     public WebDriverService(){
+        ChromeOptions options = new ChromeOptions();
+        options.addArguments("--remote-allow-origins=*");
         WebDriverManager.chromedriver().setup();
-        driver = new ChromeDriver();
+        driver = new ChromeDriver(options);
         waitLoading = new WebDriverWait(driver, Duration.ofSeconds(15));
     }
 
-    @Scheduled(fixedDelay = 60000)
+    @Scheduled(fixedDelay = 1160000)
     public void loadWebSite(){
         driver.get("https://www.amazon.fr");
         waitLoading.until(ExpectedConditions.elementToBeClickable(By.id("sp-cc-accept")));
@@ -48,6 +51,20 @@ public class WebDriverService {
         waitLoading.until(ExpectedConditions.elementToBeClickable(By.id("nav-search-submit-button")));
         driver.findElement(By.id("nav-search-submit-button")).click();
 
+        String nbPage = driver.findElement(By.xpath("//span[@class='s-pagination-item s-pagination-disabled']")).getText();
+        Integer nbPageInteger = Integer.parseInt(nbPage);
+
+        itemDao.saveItem(getListItemDTO());
+
+        for (int i = 2; i<=nbPageInteger; i++){
+            waitLoading.until(ExpectedConditions.elementToBeClickable(By.xpath("//a[@aria-label='Accéder à la page " + i + "']")));
+            driver.findElement(By.xpath("//a[@aria-label='Accéder à la page " + i + "']")).click();
+            waitLoading.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("div[data-component-type='s-search-result']")));
+            itemDao.saveItem(getListItemDTO());
+        }
+    }
+
+    public List<ItemDTO> getListItemDTO(){
         List<WebElement> listOfElements = driver.findElements(By.cssSelector("div[data-component-type='s-search-result']"));
         List<ItemDTO> itemDTOList = new ArrayList<>();
         listOfElements.forEach(webElement -> {
@@ -79,6 +96,6 @@ public class WebDriverService {
             itemDTOList.add(itemDTO);
         });
 
-        itemDao.saveItem(itemDTOList);
+        return itemDTOList;
     }
 }
