@@ -11,10 +11,6 @@ import java.util.List;
 @Table(name = "ITEM")
 public class ItemEntity {
 
-/*    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;*/
-
     @Id
     @Column(name = "asin")
     private String asin;

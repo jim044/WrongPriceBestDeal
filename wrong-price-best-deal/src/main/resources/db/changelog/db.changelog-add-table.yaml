@@ -1,0 +1,40 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-table-category
+      author: Jimmy
+      preConditions:
+        - onFail: MARK_RAN
+          not:
+            tableExists:
+              tableName: category
+              schemaName: deal_schema
+      changes:
+        - createTable:
+            columns:
+              - column:
+                  autoIncrement: true
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+                    primaryKeyName: category_id_pkey
+                  name: id
+                  type: BIGINT
+              - column:
+                  constraints:
+                    nullable: false
+                  name: name
+                  type: VARCHAR(250)
+            tableName: category
+            schemaName: deal_schema
+  - changeSet:
+      id: createIndex-category-id
+      author: Jimmy
+      changes:
+        - createIndex:
+            clustered: true
+            columns:
+              - column:
+                  name: id
+            indexName: category_id_idx
+            schemaName: deal_schema
+            tableName: category

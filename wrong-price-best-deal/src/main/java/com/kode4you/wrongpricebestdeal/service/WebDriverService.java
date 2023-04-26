@@ -1,5 +1,6 @@
 package com.kode4you.wrongpricebestdeal.service;
 
+import com.kode4you.wrongpricebestdeal.dao.CategoryDao;
 import com.kode4you.wrongpricebestdeal.dao.ItemDao;
 import com.kode4you.wrongpricebestdeal.domain.dto.ItemDTO;
 import com.kode4you.wrongpricebestdeal.domain.dto.ItemPriceDTO;
@@ -33,6 +34,9 @@ public class WebDriverService {
     @Autowired
     private ItemDao itemDao;
 
+    @Autowired
+    private CategoryDao categoryDao;
+
     public WebDriverService(){
         ChromeOptions options = new ChromeOptions();
         options.addArguments("--remote-allow-origins=*");
@@ -41,13 +45,21 @@ public class WebDriverService {
         waitLoading = new WebDriverWait(driver, Duration.ofSeconds(15));
     }
 
-    @Scheduled(fixedDelay = 1160000)
+    @Scheduled(fixedDelay = 11160000)
     public void loadWebSite(){
         driver.get("https://www.amazon.fr");
         waitLoading.until(ExpectedConditions.elementToBeClickable(By.id("sp-cc-accept")));
         driver.findElement(By.id("sp-cc-accept")).click();
-        driver.findElement(By.xpath("//input[@id='twotabsearchtextbox']")).sendKeys("ordinateur");
-        waitLoading.until(ExpectedConditions.textToBePresentInElementValue(By.id("twotabsearchtextbox"), "ordinateur"));
+
+        categoryDao.findAll().forEach(categoryDTO -> {
+            loopPage(categoryDTO.getName());
+        });
+    }
+
+    public void loopPage(String searchParam){
+        driver.findElement(By.xpath("//input[@id='twotabsearchtextbox']")).clear();
+        driver.findElement(By.xpath("//input[@id='twotabsearchtextbox']")).sendKeys(searchParam);
+        waitLoading.until(ExpectedConditions.textToBePresentInElementValue(By.id("twotabsearchtextbox"), searchParam));
         waitLoading.until(ExpectedConditions.elementToBeClickable(By.id("nav-search-submit-button")));
         driver.findElement(By.id("nav-search-submit-button")).click();
 

@@ -2,7 +2,7 @@ spring:
   application:
     name:WrongPriceBestDeal
   datasource:
-    url: jdbc:postgresql://localhost:5432/wrong_price_best_deal
+    url: jdbc:postgresql://localhost:5433/wrong_price_best_deal
     username: james
     password: james
   jpa:
